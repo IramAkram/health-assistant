@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dashboard · Smart Health Assistant</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <link href="/static/css/style.css" rel="stylesheet">
+</head>
+
+<body>
+  <nav class="topbar">
+    <div class="container d-flex flex-wrap align-items-center gap-3 py-2">
+      <span class="brand"><i class="bi bi-heart-pulse-fill"></i>Health Assistant</span>
+      <div class="nav flex-grow-1" id="nav">
+        <button class="nav-link active" data-tab="overview"><i class="bi bi-grid-1x2-fill"></i><span
+            class="t">Overview</span></button>
+        <button class="nav-link" data-tab="add"><i class="bi bi-plus-circle-fill"></i><span class="t">Add
+            reading</span></button>
+        <button class="nav-link" data-tab="assistant"><i class="bi bi-robot"></i><span
+            class="t">Assistant</span></button>
+        <button class="nav-link" data-tab="alerts"><i class="bi bi-bell-fill"></i><span class="t">Alerts &amp;
+            reminders</span> <span id="alertBadge" class="badge text-bg-danger d-none"></span></button>
+        <button class="nav-link" data-tab="report"><i class="bi bi-file-earmark-pdf-fill"></i><span
+            class="t">Report</span></button>
+        <button class="nav-link" data-tab="profile"><i class="bi bi-person-circle"></i><span
+            class="t">Profile</span></button>
+        <button class="nav-link d-none" data-tab="admin" id="adminTab"><i class="bi bi-shield-lock-fill"></i><span
+            class="t">Admin</span></button>
+      </div>
+      <span id="who" class="small text-white-50"></span>
+      <button class="btn btn-sm btn-outline-light" id="logout">Sign out</button>
+    </div>
+  </nav>
+
+  <main class="container py-4">
+    <!-- OVERVIEW -->
+    <section id="tab-overview" class="tab-pane-x show">
+      <div class="banner">
+        <h2>Your daily health snapshot</h2>
+        <p>Log a reading, review your trends and ask the assistant for simple, practical tips.</p>
+        <svg viewBox="0 0 260 56" aria-hidden="true">
+          <path d="M0 30 H70 L80 30 L90 6 L104 50 L116 20 L124 30 H260" />
+        </svg>
+      </div>
+      <div class="d-flex flex-wrap justify-content-between align-items-end mb-3 gap-2">
+        <h1 class="h3 mb-0" id="hello">Your health at a glance</h1>
+        <div class="btn-group" id="periodGroup">
+          <button class="btn btn-outline-primary" data-p="daily">Day</button>
+          <button class="btn btn-outline-primary active" data-p="weekly">Week</button>
+          <button class="btn btn-outline-primary" data-p="monthly">Month</button>
+        </div>
+      </div>
+      <div id="ledger" class="ledger mb-3"></div>
+      <div class="panel mb-3" id="riskBox"></div>
+      <div class="row g-3" id="charts"></div>
+    </section>
+
+    <!-- ADD -->
+    <section id="tab-add" class="tab-pane-x">
+      <div class="panel" style="max-width:720px">
+        <h2>Add a reading</h2>
+        <p class="text-secondary small">Fill in only what you measured. Glucose is in mg/dL.</p>
+        <form id="recForm" class="row g-3">
+          <div class="col-6 col-md-3"><label class="form-label" for="f_systolic">Systolic (mmHg)</label><input
+              class="form-control" id="f_systolic" type="number" min="50" max="260"></div>
+          <div class="col-6 col-md-3"><label class="form-label" for="f_diastolic">Diastolic (mmHg)</label><input
+              class="form-control" id="f_diastolic" type="number" min="30" max="160"></div>
+          <div class="col-6 col-md-3"><label class="form-label" for="f_glucose">Glucose (mg/dL)</label><input
+              class="form-control" id="f_glucose" type="number" step="0.1" min="20" max="700"></div>
+          <div class="col-6 col-md-3"><label class="form-label" for="f_weight_kg">Weight (kg)</label><input
+              class="form-control" id="f_weight_kg" type="number" step="0.1" min="20" max="400"></div>
+          <div class="col-6 col-md-3"><label class="form-label" for="f_sleep_hours">Sleep (hours)</label><input
+              class="form-control" id="f_sleep_hours" type="number" step="0.1" min="0" max="24"></div>
+          <div class="col-6 col-md-3"><label class="form-label" for="f_exercise_minutes">Exercise (min)</label><input
+              class="form-control" id="f_exercise_minutes" type="number" min="0" max="1440"></div>
+          <div class="col-6 col-md-3"><label class="form-label" for="f_stress_level">Stress (1–10)</label><input
+              class="form-control" id="f_stress_level" type="number" min="1" max="10"></div>
+          <div class="col-12"><label class="form-label" for="f_notes">Notes</label><input class="form-control"
+              id="f_notes" maxlength="1000"></div>
+          <div class="col-12"><button class="btn btn-primary" type="submit">Save reading</button></div>
+        </form>
+        <div id="recAlerts" class="mt-3"></div>
+      </div>
+      <div class="panel mt-3">
+        <h2>Recent readings</h2>
+        <div class="table-responsive">
+          <table class="table table-sm align-middle mb-0" id="recTable"></table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ASSISTANT -->
+    <section id="tab-assistant" class="tab-pane-x">
+      <div class="panel" style="max-width:820px">
+        <h2>Personal assistant</h2>
+        <p class="small text-secondary mb-2">Ask about your trends, alerts, reminders, risk estimate or the report. Urdu
+          / Roman Urdu works too. <span class="badge-mode" id="modeLabel"></span></p>
+        <div class="chat-log mb-3" id="chat">
+          <div class="msg bot">Hello! Try: “Summarise my last 30 days” or “Give me tips to sleep better”.</div>
+        </div>
+        <form id="chatForm" class="d-flex gap-2"><input class="form-control" id="chatInput"
+            placeholder="Type your question" maxlength="2000" required><button class="btn btn-primary">Send</button>
+        </form>
+        <p class="disclaimer small mt-3 mb-0">General wellness information only — not a diagnosis or medical advice.</p>
+      </div>
+    </section>
+
+    <!-- ALERTS -->
+    <section id="tab-alerts" class="tab-pane-x">
+      <div class="row g-3">
+        <div class="col-lg-7">
+          <div class="panel">
+            <div class="d-flex justify-content-between">
+              <h2>Alerts</h2><button class="btn btn-sm btn-outline-primary" id="readAll">Mark all as read</button>
+            </div>
+            <p class="small text-secondary">Raised by fixed safety rules, not by AI.</p>
+            <div id="alertList"></div>
+          </div>
+        </div>
+        <div class="col-lg-5">
+          <div class="panel">
+            <h2>Reminders</h2>
+            <form id="remForm" class="row g-2 mb-3">
+              <div class="col-12"><input class="form-control" id="remTitle" placeholder="e.g. Measure blood pressure"
+                  required></div>
+              <div class="col-5"><input class="form-control" id="remTime" type="time" value="08:00" required></div>
+              <div class="col-4"><select class="form-select" id="remFreq">
+                  <option value="daily">Daily</option>
+                  <option value="weekly">Weekly</option>
+                </select></div>
+              <div class="col-3"><button class="btn btn-primary w-100">Add</button></div>
+            </form>
+            <p class="small text-secondary">Browser notifications appear while this page is open, only if you allowed
+              notifications in Profile.</p>
+            <div id="remList"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- REPORT -->
+    <section id="tab-report" class="tab-pane-x">
+      <div class="panel" style="max-width:560px">
+        <h2>Health report</h2>
+        <p class="text-secondary">A PDF with your measurement summary, alerts, model estimate and recent records.</p>
+        <div class="d-flex gap-2 align-items-center">
+          <select class="form-select w-auto" id="repDays">
+            <option value="7">Last 7 days</option>
+            <option value="30" selected>Last 30 days</option>
+            <option value="90">Last 90 days</option>
+          </select>
+          <button class="btn btn-primary" id="repBtn">Download PDF</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- PROFILE -->
+    <section id="tab-profile" class="tab-pane-x">
+      <div class="panel" style="max-width:620px">
+        <h2>Profile</h2>
+        <form id="profForm" class="row g-3">
+          <div class="col-12"><label class="form-label" for="p_name">Full name</label><input class="form-control"
+              id="p_name" required></div>
+          <div class="col-md-4"><label class="form-label" for="p_dob">Date of birth</label><input class="form-control"
+              id="p_dob" type="date"></div>
+          <div class="col-md-4"><label class="form-label" for="p_height">Height (cm)</label><input class="form-control"
+              id="p_height" type="number" min="50" max="250"></div>
+          <div class="col-md-4"><label class="form-label" for="p_gender">Gender</label><select class="form-select"
+              id="p_gender">
+              <option value="">—</option>
+              <option>female</option>
+              <option>male</option>
+              <option>other</option>
+            </select></div>
+          <div class="col-12"><label class="form-label" for="p_goal">Health goal</label><input class="form-control"
+              id="p_goal" maxlength="255" placeholder="e.g. Walk 30 minutes every day"></div>
+          <div class="col-12 form-check ms-2"><input class="form-check-input" type="checkbox" id="p_consent"><label
+              class="form-check-label" for="p_consent">Allow reminder notifications in this browser</label></div>
+          <div class="col-12"><button class="btn btn-primary">Save profile</button></div>
+        </form>
+      </div>
+    </section>
+
+    <!-- ADMIN -->
+    <section id="tab-admin" class="tab-pane-x">
+      <div class="row g-3 mb-3" id="adminStats"></div>
+      <div class="panel mb-3">
+        <h2>Users</h2>
+        <div class="table-responsive">
+          <table class="table table-sm align-middle mb-0" id="userTable"></table>
+        </div>
+      </div>
+      <div class="panel">
+        <h2>Recent activity</h2>
+        <div class="table-responsive">
+          <table class="table table-sm mb-0" id="logTable"></table>
+        </div>
+      </div>
+    </section>
+  </main>
+  <div class="toast-box" id="toasts"></div>
+
+  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
+  <script src="/static/js/app.js"></script>
+</body>
+
+</html>

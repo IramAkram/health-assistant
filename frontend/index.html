@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sign in · Smart Health Assistant</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <link href="/static/css/style.css" rel="stylesheet">
+</head>
+
+<body>
+  <div class="auth-wrap">
+    <section class="auth-hero">
+      <div class="logo"><i class="bi bi-heart-pulse-fill"></i>Smart Health Assistant</div>
+      <div>
+        <svg class="pulse" viewBox="0 0 520 80" aria-hidden="true">
+          <path d="M0 44 H140 L160 44 L178 10 L202 72 L222 30 L236 44 H340 L360 44 L376 18 L396 64 L410 44 H520" />
+        </svg>
+        <h1 class="mt-3">Understand your health, every day.</h1>
+        <p class="lead mt-3">Track blood pressure, glucose, sleep and more. Get AI-guided insights, smart alerts and
+          doctor-ready reports.</p>
+      </div>
+      <div>
+        <div class="feat">
+          <div><i class="bi bi-graph-up-arrow"></i><b>Live trends</b>Interactive charts</div>
+          <div><i class="bi bi-robot"></i><b>AI agents</b>Personal guidance</div>
+          <div><i class="bi bi-shield-check"></i><b>Private</b>Secure and consent-based</div>
+        </div>
+        <p class="disclaimer mt-3 mb-0 text-white-50">Informational wellness tool. Not a diagnosis or a substitute for
+          medical advice.</p>
+      </div>
+    </section>
+    <section class="auth-panel">
+      <div class="auth-card">
+        <h2 class="h4 mb-1">Welcome</h2>
+        <p class="text-secondary small mb-3">Sign in or create your free account.</p>
+        <ul class="nav nav-pills mb-4 nav-fill" role="tablist">
+          <li class="nav-item"><button class="nav-link active" data-mode="login" type="button">Sign in</button></li>
+          <li class="nav-item"><button class="nav-link" data-mode="register" type="button">Create account</button></li>
+        </ul>
+        <div id="msg" class="alert alert-danger d-none" role="alert"></div>
+
+        <form id="loginForm" class="vstack gap-3">
+          <div><label class="form-label" for="lEmail">Email</label><input class="form-control" id="lEmail" type="email"
+              autocomplete="username" required></div>
+          <div><label class="form-label" for="lPass">Password</label><input class="form-control" id="lPass"
+              type="password" autocomplete="current-password" required></div>
+          <button class="btn btn-primary" type="submit">Sign in</button>
+        </form>
+
+        <form id="registerForm" class="vstack gap-3 d-none">
+          <div><label class="form-label" for="rName">Full name</label><input class="form-control" id="rName"
+              minlength="2" required></div>
+          <div><label class="form-label" for="rEmail">Email</label><input class="form-control" id="rEmail" type="email"
+              autocomplete="username" required></div>
+          <div><label class="form-label" for="rPass">Password (8+ characters)</label><input class="form-control"
+              id="rPass" type="password" minlength="8" maxlength="72" autocomplete="new-password" required></div>
+          <div class="row g-2">
+            <div class="col-6"><label class="form-label" for="rDob">Date of birth</label><input class="form-control"
+                id="rDob" type="date"></div>
+            <div class="col-6"><label class="form-label" for="rHeight">Height (cm)</label><input class="form-control"
+                id="rHeight" type="number" min="50" max="250"></div>
+          </div>
+          <div><label class="form-label" for="rGender">Gender</label>
+            <select class="form-select" id="rGender">
+              <option value="">Prefer not to say</option>
+              <option>female</option>
+              <option>male</option>
+              <option>other</option>
+            </select>
+          </div>
+          <button class="btn btn-primary" type="submit">Create account</button>
+        </form>
+      </div>
+    </section>
+  </div>
+  <script>
+    const $ = s => document.querySelector(s);
+    const msg = $('#msg');
+    function show(t, ok) { msg.textContent = t; msg.className = 'alert ' + (ok ? 'alert-success' : 'alert-danger'); }
+    function errText(d) { return Array.isArray(d.detail) ? d.detail.map(x => x.msg.replace('Value error, ', '')).join(' ') : (d.detail || 'Something went wrong.'); }
+
+    document.querySelectorAll('[data-mode]').forEach(b => b.onclick = () => {
+      document.querySelectorAll('[data-mode]').forEach(x => x.classList.toggle('active', x === b));
+      $('#loginForm').classList.toggle('d-none', b.dataset.mode !== 'login');
+      $('#registerForm').classList.toggle('d-none', b.dataset.mode !== 'register');
+      msg.className = 'alert d-none';
+    });
+
+    async function login(email, password) {
+      const r = await fetch('/api/auth/login', { method: 'POST', body: new URLSearchParams({ username: email, password }) });
+      const d = await r.json();
+      if (!r.ok) throw new Error(errText(d));
+      localStorage.setItem('token', d.access_token);
+      location.href = '/dashboard';
+    }
+    $('#loginForm').onsubmit = async e => {
+      e.preventDefault();
+      try { await login($('#lEmail').value, $('#lPass').value); } catch (err) { show(err.message); }
+    };
+    $('#registerForm').onsubmit = async e => {
+      e.preventDefault();
+      const body = {
+        email: $('#rEmail').value, full_name: $('#rName').value, password: $('#rPass').value,
+        date_of_birth: $('#rDob').value || null, height_cm: $('#rHeight').value ? +$('#rHeight').value : null, gender: $('#rGender').value || null
+      };
+      try {
+        const r = await fetch('/api/auth/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+        const d = await r.json(); if (!r.ok) throw new Error(errText(d));
+        await login(body.email, body.password);
+      } catch (err) { show(err.message); }
+    };
+    if (localStorage.getItem('token')) location.href = '/dashboard';
+  </script>
+</body>
+
+</html>
